@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='statelogic',
-    version='0.1.0',  # Update version as needed
+    version='0.1.6',  # Update version as needed
     description='A library for state management with colored messages',
-    author='Your Name',
+    author='Wong Chun Fai',
     author_email='wilgat.wong@gmail.com',
     url='https://github.com/Wilgat/Statelogic',  # Your GitHub URL
     packages=find_packages(),

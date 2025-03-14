@@ -21,43 +21,25 @@ from statelogic import StateLogic
 state_logic = StateLogic()
 ```
 
-## Using the FSM Class
+## Using it as Finite State Machine
 ```
-from statelogic import FSM
-
-class MyFSM(FSM):
-    def __init__(self):
-        super().__init__(self)
-        self.state("INITIAL")
-        self.transition("start", "INITIAL", "RUNNING")
-    
-    def onSTART(self):
-        print("Transitioning to RUNNING state")
-
-fsm_instance = MyFSM()
-fsm_instance.start()
-```
-
-## Using the AppData Class
-```
-from statelogic import AppData
-
-app_data = AppData()
-app_data.appName("My Application")
-app_data.author("Your Name")
-
-print(app_data.appName())  # Output: My Application
-print(app_data.author())    # Output: Your Name
-```
-
-Addition methods in AppData
-
-
-```
-app_data.majorVersion(1)
-app_data.minorVersion(0)
-
-print(app_data.version())  # Output: 1.0
+>>> from statelogic import StateLogic
+>>> s=StateLogic()
+>>> s.transition("freeze","LIQUID","SOLID")
+<statelogic.StateLogic object at 0x103188950>
+>>> s.transition("melts","SOLID","LIQUID")
+<statelogic.StateLogic object at 0x103188950>
+>>> s.state("anything else")
+<statelogic.StateLogic object at 0x103188950>
+>>> s.state()
+>>> s.state("SOLID")
+<statelogic.StateLogic object at 0x103188950>
+>>> s.state()
+'SOLID'
+>>> s.states()
+['LIQUID', 'SOLID']
+>>> s.transitions()
+['freeze', 'melts']
 ```
 
 
@@ -76,15 +58,6 @@ print(my_instance.name())  # Output: Default Name
 # Update the name
 my_instance.name("New Name")
 print(my_instance.name())  # Output: New Name
-```
-
-## Using Transition Class
-```
-from statelogic import Transition
-transition = Transition(name="Start to End", fromState="START", toState="END")
-print(transition.name)        # Output: Start to End
-print(transition.fromState)   # Output: START
-print(transition.toState)     # Output: END
 ```
 
 
