@@ -2,17 +2,16 @@ from setuptools import setup, find_packages
 
 setup(
     name='statelogic',
-    version='0.1.6',  # Update version as needed
+    version='1.0.0',  
     description='A library for state management with colored messages',
     author='Wong Chun Fai',
     author_email='wilgat.wong@gmail.com',
-    url='https://github.com/Wilgat/Statelogic',  # Your GitHub URL
+    url='https://github.com/Wilgat/Statelogic',  
     packages=find_packages(),
     classifiers=[
         'Programming Language :: Python :: 3',
-        'License :: OSI Approved :: MIT License',  # Update as per your license
+        'License :: OSI Approved :: MIT License',  
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',  # Update as needed
+    python_requires='>=3.6',
 )
-
