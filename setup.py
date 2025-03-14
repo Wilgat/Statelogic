@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='statelogic',
-    version='1.0.1',  
+    version='1.0.2',  
     description='A library for state management with colored messages',
     author='Wong Chun Fai',
     author_email='wilgat.wong@gmail.com',
