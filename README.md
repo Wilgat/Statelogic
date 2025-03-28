@@ -4,6 +4,16 @@ StateLogic is a Python library for finite state machine with colored messages in
 
 The StateLogic Python finite state machine library offers several key features that facilitate the management of state transitions and event handling. Here’s a summary of its main features:
 
+## Project Locations
+
+## Python version
+ - The project StateLogic (python implementation) corresponding at https://github.com/Wilgat/Statelogic and,
+ - the pypi package is at https://pypi.org/project/statelogic/
+
+## Typescript implementation
+ - The project StateSafe (typescript implementation) is located at https://github.com/Wilgat/StateSafe and,
+ - the npmjs package is at https://www.npmjs.com/package/statesafe
+
 ## Key Features
 1. State Transitions:
  - Allows the definition of transitions between various states using a simple syntax (e.g., s.transition("event", "from_state", "to_state")).
@@ -41,6 +51,15 @@ from statelogic import StateLogic
 
 # Create an instance of StateLogic
 state_logic = StateLogic()
+```
+
+To create a new object with project details: {author}, {application}, {majorVersion}, {minorVersion}, {patchVersion}
+```python
+from statelogic import StateLogic
+
+# Create an instance of StateLogic
+state_logic = StateLogic()
+state_logic.author("Test Author").appName("TestApp").majorVersion(1).minorVersion(0).patchVersion(0)
 ```
 
 ### Using it as Finite State Machine

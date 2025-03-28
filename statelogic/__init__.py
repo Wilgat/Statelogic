@@ -152,24 +152,56 @@ class FSM(Reflection):
         converted_string = ''.join(converted_parts)
         return converted_string
 
+    def fire(self, transition):
+        fromClass = self
+        if hasattr(self, 'fromClass'):
+            fromClass = self.fromClass
+        if transition in fromClass.methods():
+            fromClass.__dict__[transition]()
+        return fromClass
+
     def after(self, name, foo):
         fromClass = self
         if hasattr(self, 'fromClass'):
-            fromClass = self
+            fromClass = self.fromClass
         name = name.strip()
-        if name in fromClass.transitions():
+        if name in fromClass.events():
             newname="after" +name[0].upper() + name[1:]
             if newname not in fromClass.methods():
                 fromClass.__dict__[newname] = foo.__get__(self)
                 fromClass.methods(newname)
         return fromClass
 
+    def fromState(self):
+        fromClass = self
+        if hasattr(self, 'fromClass'):
+            fromClass = self.fromClass
+        return fromClass._["toState"]
+
+    def nextState(self):
+        fromClass = self
+        if hasattr(self, 'fromClass'):
+            fromClass = self.fromClass
+        return fromClass._["nextState"]
+
+    def toState(self):
+        fromClass = self
+        if hasattr(self, 'fromClass'):
+            fromClass = self.fromClass
+        return fromClass._["fromState"]
+
+    def transitionName(self):
+        fromClass = self
+        if hasattr(self, 'fromClass'):
+            fromClass = self.fromClass
+        return fromClass._["transitionName"]
+
     def on(self, name, foo):
         fromClass = self
         if hasattr(self, 'fromClass'):
-            fromClass = self
+            fromClass = self.fromClass
         name = name.strip()
-        if name in fromClass.transitions():
+        if name in fromClass.events():
             newname= "on" +name[0].upper() + name[1:]
             if newname not in fromClass.methods():
                 fromClass.__dict__[newname] = foo.__get__(self)
@@ -207,9 +239,9 @@ class FSM(Reflection):
     def before(self, name, foo):
         fromClass = self
         if hasattr(self, 'fromClass'):
-            fromClass = self
+            fromClass = self.fromClass
         name = name.strip()
-        if name in fromClass.transitions():
+        if name in fromClass.events():
             newname= "before" +name[0].upper() + name[1:]
             if newname not in fromClass.methods():
                 fromClass.__dict__[newname] = foo.__get__(self)
@@ -219,7 +251,7 @@ class FSM(Reflection):
     def method(self, name, foo):
         fromClass = self
         if hasattr(self, 'fromClass'):
-            fromClass = self
+            fromClass = self.fromClass
         name = name.strip()
         if name not in fromClass.methods():
             fromClass.__dict__[name] = foo.__get__(self)
@@ -229,8 +261,12 @@ class FSM(Reflection):
     def transition(self, name, fromState, toState):
         fromClass = self
         if hasattr(self, 'fromClass'):
-            fromClass = self
-        if name not in fromClass.transitions():
+            fromClass = self.fromClass
+        if name not in fromClass.events() and name not in Attr.RESERVED:
+            
+            for t in fromClass.transitions():
+                if t.fromState()==fromState and t.toState()==toState:
+                    return fromClass
             def t(self):
                 if fromClass.state() == fromState:
                     before= "before" +name[0].upper() + name[1:]
@@ -259,7 +295,9 @@ class FSM(Reflection):
                     fromClass._["nextState"]=""
                 return fromClass
             fromClass.__dict__[name] = t.__get__(self)
-            fromClass.transitions(name)
+            fromClass.events(name)
+            transition = Transition(name, fromState, toState)
+            fromClass.transitions(transition)
             fromClass.methods(name)
         fromClass.states(fromState)
         fromClass.states(toState)
@@ -282,7 +320,8 @@ class FSM(Reflection):
         Attr(fromClass, "state", readonly=True)
         Attr(fromClass, "nextState", "", readonly=True)
         Attr(fromClass, attrName="methods", value = [])
-        Attr(fromClass, attrName="transitions", value = [])
+        Attr(fromClass, attrName="events", value = [])
+        Attr(fromClass, attrName="transitions", sorting=False, value = [])
         Attr(fromClass, attrName="states", value = [])
         fromClass.__dict__['onState'] = self.onState.__get__(fromClass)
         if not isSelf:
@@ -292,23 +331,23 @@ class FSM(Reflection):
             fromClass.__dict__['on'] = self.on.__get__(fromClass)   
             fromClass.__dict__['before'] = self.before.__get__(fromClass)
             fromClass.__dict__['method'] = self.method.__get__(fromClass)
+            fromClass.__dict__['fire'] = self.fire.__get__(fromClass)
+            fromClass.__dict__['stateChanged'] = self.stateChanged.__get__(fromClass)
+            fromClass.__dict__['hasFunc'] = self.hasFunc.__get__(fromClass)
+            fromClass.__dict__['transitionName'] = self.transitionName.__get__(fromClass)
 
 class AppData(FSM):
 
-    def __init__(self, this=None, fromClass=None):
+    def __init__(self, fromClass=None, this=None):
         if fromClass is None:
             fromClass=self
         try:
             super().__init__(fromClass=fromClass)
         except:
             super(AppData, self).__init__(fromClass=fromClass)
-        self.__ini_appdata__(fromClass)
-        if this is None:
-            self.this(__file__)
-        else:
-            self.this(this)
+        self.__ini_appdata__(fromClass, this)
 
-    def __ini_appdata__(self, fromClass):
+    def __ini_appdata__(self, fromClass, this):
         if not hasattr(self, "__appdata_inited__"):
             self.__appdata_inited__ = True
             Attr(fromClass, "author")
@@ -318,7 +357,12 @@ class AppData(FSM):
             Attr(fromClass, "lastUpdate")
             Attr(fromClass, "majorVersion", 0)
             Attr(fromClass, "minorVersion", 0)
+            Attr(fromClass, "patchVersion", 0)
             Attr(fromClass, "thisFile", "<stdin>")
+            if this is None:
+                fromClass.this(__file__)
+            else:
+                fromClass.this(this)
 
     def downloadHost(self):
         if self.downloadUrl() == '':
@@ -345,14 +389,17 @@ class AppData(FSM):
                 self.thisFile(this)
             return self.__this__
         else:
-            this = reg.sub("/",this)
-            self.__this__ = this
-            if this != '<stdin>':
-                self.thisFile(this)
+            if isinstance(this,basestring):
+                this = reg.sub("/",this)
+                self.__this__ = this
+                if this != '<stdin>':
+                    self.thisFile(this)
+            else:
+                self.__this__ = ''
             return self
 
     def version(self):
-        return "%s.%s" % (self.majorVersion(),self.minorVersion())
+        return "%s.%s.%s" % (self.majorVersion(),self.minorVersion(),self.patchVersion())
 
 class Signal(Reflection):
     def __init__(self):
@@ -479,13 +526,15 @@ class StateLogic(AppData, Sh):
     LIGHT_GREEN='\033[92m'
     LIGHT_TURQUOISE='\033[96m'
 
-    def __init__(self, this=None, fromClass=None):
+    def __init__(self, fromClass=None, this=None):
+        isSelf = False
         if fromClass is None:
-            fromClass=self
+            isSelf = True
+            fromClass = self
         try:
-            super().__init__(this=this, fromClass=fromClass)
+            super().__init__(fromClass=fromClass, this=this)
         except:
-            super(StateLogic, self).__init__(this=this, fromClass=fromClass)
+            super(StateLogic, self).__init__(fromClass=fromClass,this=this)
         self.__init_signal__()
         if not hasattr(fromClass, "__msgbase_inited__"):
             fromClass.__msgbase_inited__ = True
@@ -501,6 +550,18 @@ class StateLogic(AppData, Sh):
             Attr(fromClass,"__timeColor__","")
             Attr(fromClass,"__timeTerm__","")
             Attr(fromClass,"useColor", not self.isGitBash())
+        if not isSelf:
+            fromClass.__dict__['infoMsg'] = self.infoMsg.__get__(fromClass)
+            fromClass.__dict__['criticalMsg'] = self.criticalMsg.__get__(fromClass)
+            fromClass.__dict__['safeMsg'] = self.safeMsg.__get__(fromClass)
+            fromClass.__dict__['__timeMsg__'] = self.__timeMsg__.__get__(fromClass)
+            fromClass.__dict__['__header__'] = self.__header__.__get__(fromClass)
+            fromClass.__dict__['__coloredMsg__'] = self.__coloredMsg__.__get__(fromClass)
+            fromClass.__dict__['__tagMsg__'] = self.__tagMsg__.__get__(fromClass)
+            fromClass.__dict__['__formattedMsg__'] = self.__formattedMsg__.__get__(fromClass)
+            fromClass.__dict__['prn'] = self.prn.__get__(fromClass)
+            fromClass.__dict__['now'] = self.now.__get__(fromClass)
+            fromClass.__dict__['version'] = self.version.__get__(fromClass)
 
     def __coloredMsg__(self,color=None):
         if color is None :
