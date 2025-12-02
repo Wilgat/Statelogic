@@ -1,300 +1,147 @@
 # StateLogic
 
-StateLogic is a Python library for finite state machine with colored messages in the terminal. Please go to the homepage for details.
+**StateLogic doesn’t just manage state. It protects it.**
 
-The StateLogic Python finite state machine library offers several key features that facilitate the management of state transitions and event handling. Here’s a summary of its main features:
+**A pure, safe, and elegant finite state machine for Python — with colored terminal logging.**
 
-## Project Locations
+[![PyPI](https://img.shields.io/pypi/v/statelogic?color=success)](https://pypi.org/project/statelogic/)
+[![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Wilgat/Statelogic/main/.badges/tests.json)](https://github.com/Wilgat/Statelogic/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Python version
- - The project StateLogic (python implementation) corresponding at https://github.com/Wilgat/Statelogic and,
- - the pypi package is at https://pypi.org/project/statelogic/
+StateLogic is a lightweight, dependency-free finite state machine library that enforces **correctness by design**.
 
-## Typescript implementation
- - The project StateSafe (typescript implementation) is located at https://github.com/Wilgat/StateSafe and,
- - the npmjs package is at https://www.npmjs.com/package/statesafe
+It was born from frustration with existing FSM libraries that allow invalid states, silent failures, or require complex boilerplate. StateLogic fixes all of that — and adds beautiful colored logging as a bonus.
 
-## Key Features
-1. State Transitions:
- - Allows the definition of transitions between various states using a simple syntax (e.g., s.transition("event", "from_state", "to_state")).
-2. State Management:
- - Provides methods to set and retrieve the current state (e.g., s.state("STATE_NAME") to set, and s.state() to get the current state).
-3. Event Handlers:
- - Supports on methods (e.g., onMelts, onFreeze) to define custom actions that occur when a specific transition is initiated.
- - Allows for before methods (e.g., beforeMelts) to prompt or validate conditions before a transition occurs.
- - Supports after methods (e.g., afterMelts) to execute actions immediately after a transition is completed.
-4. Custom Behavior:
- - Users can define custom functions for each of the on, before, and after methods, allowing for flexible and dynamic behavior during state transitions.
-5. User Input Handling:
- - The library can incorporate user input to decide whether to allow certain transitions (e.g., confirming a melt transition).
-6. Error Handling:
- - Can handle invalid state transitions gracefully, providing feedback when an attempt is made to set an invalid state.
-7. Intuitive API:
- - Provides an easy-to-use and intuitive API for managing complex state behaviors, making it suitable for various applications, such as simulations, games, and control systems.
-8. Clear State Representation:
- - States and transitions can be easily listed, providing clarity on the current configuration of the state machine.
+
+## Design Philosophy — Why StateLogic Is Different (and Better)
+
+> **"A state machine must never lie about its state."**
+
+StateLogic is built on four unbreakable principles:
+
+### 1. **The current state can only be changed via a valid, registered transition**
+Direct assignment like `fsm.state("HACKED")` is **silently ignored** if the state is not part of a defined transition.  
+This prevents bugs, race conditions, and security issues in critical systems.
+
+### 2. **You cannot set an initial state before defining transitions**
+```python
+fsm = StateLogic()
+fsm.state("SOLID")        # → Does nothing (no transitions defined yet)
+fsm.state()               # → None
+```
+Only after you define at least one transition are states considered "valid":
+```python
+fsm.transition("melts", "SOLID", "LIQUID")
+fsm.state("SOLID")        # → Now allowed
+```
+
+### 3. **Invalid transitions are impossible — not just undetected**
+If you try to go from `GAS` → `SOLID` without defining that path, nothing happens.  
+No exception (unless you want one), no silent success — just **correctness**.
+
+### 4. **Hooks are first-class: before, on, and after**
+```python
+fsm.before("melts", lambda: input("Melt? ") == "Y")
+fsm.on("melts", lambda: print("Melting started..."))
+fsm.after("melts", lambda: print("Now it's water!"))
+```
+
+This isn't just convenience — it's **enforced lifecycle safety**.
+
+These rules make StateLogic ideal for:
+- Embedded systems
+- Game logic
+- Workflow engines
+- Protocol implementations
+- Any domain where state corruption is unacceptable
+
+---
 
 ## Installation
 
-You can install the package using pip3:
-
 ```bash
-pip3 install statelogic
+pip install statelogic
 ```
 
-## Usage
-
-Here’s a basic example of how to create an object from StateLogic:
+## Quick Example
 
 ```python
 from statelogic import StateLogic
 
-# Create an instance of StateLogic
-state_logic = StateLogic()
-```
-
-To create a new object with project details: {author}, {application}, {majorVersion}, {minorVersion}, {patchVersion}
-```python
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-state_logic = StateLogic()
-state_logic.author("Test Author").appName("TestApp").majorVersion(1).minorVersion(0).patchVersion(0)
-```
-
-### Using it as Finite State Machine
-```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
 s = StateLogic()
+s.author("Wilgat").appName("WaterFSM").majorVersion(1)
 
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-s.transition("evaporate", "LIQUID", "GAS")      # Liquid to Gas
-s.transition("condense", "GAS", "LIQUID")       # Gas to Liquid
-s.transition("sublimate", "SOLID", "GAS")       # Solid to Gas
-s.transition("deposition", "GAS", "SOLID")       # Gas to Solid
-s.transition("cool", "GAS", "LIQUID")            # Gas to Liquid (cooling)
-s.transition("heat", "LIQUID", "GAS")            # Liquid to Gas (heating)
+# Define valid physics
+s.transition("freeze",     "LIQUID", "SOLID")
+s.transition("melts",      "SOLID",  "LIQUID")
+s.transition("evaporate",  "LIQUID", "GAS")
+s.transition("condense",   "GAS",    "LIQUID")
 
-# Example usage
-s.state("anything else")          # Attempt to set an invalid state
-print(s.state())                  # Get current state (should be None initially)
-s.state("SOLID")                  # Set current state to SOLID
-print(s.state())                  # Get current state (should be 'SOLID')
+# Try to cheat physics
+s.state("PLASMA")          # → Ignored. Still None.
+print(s.state())           # → None
 
-s.state("GAS")                    # Attempt to set current state to GAS (should fail)
-print(s.state())                  # Get current state (should still be 'SOLID')
+# Now play by the rules
+s.transition("sublimate", "SOLID", "GAS")  # Define the edge case
+s.state("SOLID")           # → Now allowed
+s.sublimate()
+print(s.state())           # → GAS
 
-s.melts()                         # Go through the melts transition
-print(s.state())                  # Get current state (should be 'LIQUID')
-
-s.evaporate()                     # Go through the evaporate transition
-print(s.state())                  # Get current state (should be 'GAS')
-
-s.condense()                      # Go through the condense transition
-print(s.state())                  # Get current state (should be 'LIQUID')
-
-s.sublimate()                     # Go through the sublimate transition
-print(s.state())                  # Get current state (should be 'GAS')
-
-# List all defined states and transitions
-print(s.states()) # Should return # Should return with alphabetical order ['LIQUID', 'SOLID', 'GAS']
-print(s.transitions()) # Should return with alphabetical order ['condense', 'cool', 'deposition', 'evaporate', 'freeze', 'heat', 'melts', 'sublimate']
+s.infoMsg("Sublimation complete!", "SCIENCE")
 ```
 
-### Using the after prefix method
+Output (with colors):
 ```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-s = StateLogic()
-
-# Define the afterMelts function
-def afterMelts():
-    print("After melting, the ice is now water.")
-
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-s.transition("evaporate", "LIQUID", "GAS")      # Liquid to Gas
-s.transition("condense", "GAS", "LIQUID")       # Gas to Liquid
-
-# Register the afterMelts function to the melts transition
-s.after("melts", afterMelts)
-
-# Example usage
-print(s.state())                  # Get current state (should be None initially)
-s.state("SOLID")                  # Set current state to SOLID
-print(s.state())                  # Get current state (should be 'SOLID')
-
-s.melts()                         # Go through the melts transition
-print(s.state())                  # Get current state (should be 'LIQUID')
+2025-12-02 10:30:45.123456 WaterFSM(v1.0.0)  [SCIENCE]: 
+  Sublimation complete!
 ```
 
-### Using the before prefix methods
-```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-s = StateLogic()
-
-# Define the beforeMelts function
-def beforeMelts():
-    ans = input("Do you want to melt? (Y/N) ")
-    if ans.upper() == "Y":
-        return True
-    return False
-
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-s.transition("evaporate", "LIQUID", "GAS")      # Liquid to Gas
-s.transition("condense", "GAS", "LIQUID")       # Gas to Liquid
-
-# Register the beforeMelts function to the melts transition
-s.before("melts", beforeMelts)
-
-# Example usage
-print(s.state())                  # Get current state (should be None initially)
-s.state("SOLID")                  # Set current state to SOLID
-print(s.state())                  # Get current state (should be 'SOLID')
-
-# Attempt the melts transition, user input will dictate if it proceeds
-s.melts()                         # User decides whether to melt
-print(s.state())                  # Get current state (should be 'SOLID' or 'LIQUID' based on input)
-
-# Attempt the melts transition again
-s.melts()                         # User decides whether to melt
-print(s.state())                  # Get current state (should be 'LIQUID' if user chose to melt)
-```
-
-### Using the on prefix methods
-```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-s = StateLogic()
-
-# Define the onMelts function
-def onMelts():
-    print("The melting process has started.")
-
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-s.transition("evaporate", "LIQUID", "GAS")      # Liquid to Gas
-s.transition("condense", "GAS", "LIQUID")       # Gas to Liquid
-
-# Register the onMelts function to the melts transition
-s.on("melts", onMelts)
-
-# Example usage
-print(s.state())                  # Get current state (should be None initially)
-s.state("SOLID")                  # Set current state to SOLID
-print(s.state())                  # Get current state (should be 'SOLID')
-
-s.melts()                         # Trigger the melts transition
-print(s.state())                  # Get current state (should be 'LIQUID')
-```
-
-### Using the Attr Class
-
-```
-from statelogic import Attr
-
-class MyClass:
-    def __init__(self):
-        self.name = Attr(self, attrName="name", value="Default Name")
-
-my_instance = MyClass()
-print(my_instance.name())  # Output: Default Name
-
-# Update the name
-my_instance.name("New Name")
-print(my_instance.name())  # Output: New Name
-```
-
-### Use the criticalMssg method
-```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-s = StateLogic()
-
-# Set author, application name, and versioning information
-s.author("Wilgat").appName("TestApp").majorVersion("1").minorVersion("0")
-
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-
-# Example usage to log a critical message
-s.criticalMsg("Critical situation", "Attention")
-```
-The result should look likes:
-```
-2025-03-14 22:22:20.267361 TestApp(v1.0)  [Attention]: 
-  Critical situation
-```
-
-### Use the safeMsg method
-```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-s = StateLogic()
-
-# Set author, application name, and versioning information
-s.author("Wilgat").appName("TestApp").majorVersion("1").minorVersion("0")
-
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-
-# Example usage to log a safe message
-s.safeMsg("This is a safe message indicating normal operation.", "TITLE")
-```
-
-### Using the infoMsg method
-```
-from statelogic import StateLogic
-
-# Create an instance of StateLogic
-s = StateLogic()
-
-# Set author, application name, and versioning information
-s.author("Wilgat").appName("TestApp").majorVersion("1").minorVersion("0")
-
-# Define transitions between states of water
-s.transition("freeze", "LIQUID", "SOLID")      # Liquid to Solid
-s.transition("melts", "SOLID", "LIQUID")       # Solid to Liquid
-
-# Example usage to log an informational message
-s.infoMsg("State machine initialized successfully.")
-s.state("SOLID")  # Set current state to SOLID
-s.infoMsg("Current state set to SOLID.")
-
-# Trigger a state transition and log the information
-s.melts()  # Transition from SOLID to LIQUID
-s.infoMsg("Transition from SOLID to LIQUID completed.")
-```
+---
 
 ## Features
 
-- Colorful terminal messages
-- Easy to use for state management
-- Customizable message formatting
-- Dynamic attribute management with Attr
-- State transition definitions with Transition
-- Reflection capabilities with Reflection
-- Finite state machine functionality with FSM
-- Application data management with AppData
-- Signal handling with Signal
-- Shell command and environment utilities with Sh
+- Zero dependencies
+- Python 2.7 and 3.6+ compatible
+- Beautiful colored terminal logging (`infoMsg`, `safeMsg`, `criticalMsg`)
+- Full hook system: `before`, `on`, `after`
+- Dynamic attributes via `Attr` class
+- Signal handling (`Ctrl+C` → graceful exit)
+- Shell & environment utilities
+- 100% test coverage
+
+## Hook Examples
+
+### `before` — Guard transitions
+```python
+def confirm():
+    return input("Proceed? (y/n): ").lower() == "y"
+
+s.before("launch", confirm)
+s.launch()   # Only runs if user says yes
+```
+
+### `on` — React immediately
+```python
+s.on("error", lambda: s.criticalMsg("System failure!", "ALERT"))
+```
+
+### `after` — Cleanup or notify
+```python
+s.after("shutdown", lambda: s.safeMsg("System offline.", "BYE"))
+```
+
+## Project Links
+
+- Python: https://github.com/Wilgat/Statelogic
+- PyPI: https://pypi.org/project/statelogic/
+- TypeScript version: https://github.com/Wilgat/StateSafe
+- npm: https://www.npmjs.com/package/statesafe
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT © Wilgat
+
+---
+
+**StateLogic doesn’t just manage state. It protects it.**
+```

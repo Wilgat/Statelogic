@@ -4,7 +4,7 @@ from os.path import join, realpath
 import sys
 
 # Adjust the path to import StateLogic
-sys.path.insert(0, realpath(join(__file__, "../../")))
+sys.path.insert(0, realpath(join(__file__, "../../src/")))
 from statelogic import StateLogic
 
 class Matter(StateLogic):
