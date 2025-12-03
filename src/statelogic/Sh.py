@@ -10,7 +10,7 @@ class Sh(Signal):
     CLASSNAME = "Sh"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 0
+    PATCH_VERSION = 1
 
     @staticmethod
     def class_version():

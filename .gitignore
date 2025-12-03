@@ -3,3 +3,4 @@ statelogic.egg-info
 build
 dist
 .pytest_cache
+statelogic.pxd

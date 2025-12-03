@@ -7,6 +7,7 @@ import sys
 sys.path.insert(0, realpath(join(__file__, "../../src/")))
 from statelogic import StateLogic
 
+
 class TestStateLogic(unittest.TestCase):
     def setUp(self):
         # Initialize a new instance of StateLogic before each test
