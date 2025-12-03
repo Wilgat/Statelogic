@@ -9,8 +9,7 @@ set -eu
 PROJECT="statelogic"
 
 # Get version from package (fallback to unknown)
-VERSION=$(python3 -c "import importlib.metadata; print(importlib.metadata.version('statelogic'))" 2>/dev/null || \
-          python -c "from src.statelogic import __version__; print(__version__)" 2>/dev/null || \
+VERSION=$(python3 -c "from src import statelogic; print(statelogic.__version__)" 2>/dev/null || \
           echo "unknown")
 
 echo "statelogic build tool (v$VERSION)"
