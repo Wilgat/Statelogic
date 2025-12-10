@@ -4,13 +4,51 @@ set -eu
 # =============================================
 # statelogic build script — by Wong Chun Fai (wilgat)
 # Pure POSIX sh, egg-info fully obliterated
+# Now works on Python2-only and Python3 systems automatically
 # =============================================
 
 PROJECT="statelogic"
 
+# ——————————————————————————
+# Simple Python 2/3 auto detection (pure POSIX, no bashisms)
+# ——————————————————————————
+if command -v python2 >/dev/null 2>&1 && python2 -c "import sys" 2>/dev/null; then
+    PYTHON=python2
+    if command -v pip2 >/dev/null 2>&1; then
+        PIP=pip2
+    else
+        PIP="python2 -m pip"
+    fi
+elif command -v python3 >/dev/null 2>&1 && python3 -c "import sys" 2>/dev/null; then
+    PYTHON=python3
+    if command -v pip3 >/dev/null 2>&1; then
+        PIP=pip3
+    else
+        PIP="python3 -m pip"
+    fi
+elif command -v python >/dev/null 2>&1 && python -c "import sys; sys.exit(0 if sys.version_info >= (3,) else 1)" 2>/dev/null; then
+    PYTHON=python
+    if command -v pip >/dev/null 2>&1; then
+        PIP=pip
+    else
+        PIP="python -m pip"
+    fi
+else
+    echo "ERROR: No working Python interpreter found (python2 or python3 required)"
+    exit 1
+fi
+
+# Final fallback – if the chosen pip doesn't actually work, force module mode
+if ! $PIP --version >/dev/null 2>&1; then
+    PIP="$PYTHON -m pip"
+fi
+
+echo "Detected Python interpreter: $PYTHON"
+echo "Using pip command         : $PIP"
+echo
+
 # Get version from package (fallback to unknown)
-VERSION=$(python3 -c "from src import statelogic; print(statelogic.__version__)" 2>/dev/null || \
-          echo "unknown")
+VERSION=$($PYTHON -c "from src import statelogic; print(statelogic.__version__)" 2>/dev/null || echo "unknown")
 
 echo "statelogic build tool (v$VERSION)"
 echo "========================================"
@@ -20,30 +58,27 @@ show_help() {
 Usage: $0 <command> [options]
 
 Commands:
-  setup      Install/update build + twine
+  setup      Install/update build + twine + pytest
   clean      Remove ALL build artifacts, caches, and egg-info
   build      Build sdist + wheel
   upload     Upload to PyPI
   git        git add . -> commit -> push
   tag        Create and push git tag v$VERSION
+  release    test       Run the test suite (pytest)
+             Optional arguments are passed directly to pytest.
   release    clean -> build -> upload -> tag (full release!)
   all        Same as release
-  test       Run the test suite (pytest
-             Optional arguments are passed directly to pytest.
-             Examples:
-               ./build.sh test
-               ./build.sh test -k condense      # run only tests containing "condense"
-               ./build.sh test test/testMatter.py::TestMatter::test_transition_gas_to_liquid_on_condense_when_temperature_is_low
 
 Example:
   ./build.sh release
   ./build.sh test -v
+  ./build.sh test -k condense
 EOF
 }
 
 do_setup() {
     echo "Installing/upgrading build tools..."
-    pip3     install --upgrade build twine pytest
+    $PIP install --upgrade build twine pytest
 }
 
 do_clean() {
@@ -57,7 +92,7 @@ do_clean() {
 
 do_build() {
     echo "Building package..."
-    python3 -m build --sdist --wheel --outdir dist/
+    $PYTHON -m build --sdist --wheel --outdir dist/
     echo "Build complete -> dist/"
     ls -lh dist/
 }
@@ -93,24 +128,25 @@ do_tag() {
     echo "-> https://github.com/Wilgat/Statelogic/releases/tag/$TAG"
 }
 
-# NEW: run tests
 do_test() {
     echo "Running test suite (pytest)..."
-    # Ensure pytest is available
+    # Make sure pytest is there
     if ! command -v pytest >/dev/null 2>&1; then
         echo "pytest not found – installing it temporarily..."
-        python3 -m pip install --quiet pytest
+        $PYTHON -m pip install --quiet pytest
     fi
 
-    # If the package is already importable from src, add it to PYTHONPATH
+    # Make the package importable from src/
     export PYTHONPATH="${PYTHONPATH:-}:$(pwd)/src"
 
-    # Run pytest on the test/ directory and pass through any extra args
-    python3 -m pytest test/* "$@"
+    # Run pytest and pass all extra args
+    $PYTHON -m pytest test/* "$@"
     echo "Tests finished."
 }
 
-# POSIX case
+# ====================================
+# Main command dispatcher
+# ====================================
 case "${1:-}" in
     setup)     do_setup     ;;
     clean)     do_clean     ;;
@@ -118,7 +154,7 @@ case "${1:-}" in
     upload)    do_upload    ;;
     git)       do_git       ;;
     tag)       do_tag       ;;
-    test)      shift; do_test "$@" ;;           # <-- new command
+    test)      shift; do_test "$@" ;;
     release|all)
                do_clean
                do_build
