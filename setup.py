@@ -1,12 +1,22 @@
 # setup.py
+from __future__ import print_function, absolute_import
+
+import io                # <-- added
 from setuptools import setup, find_packages
 
-with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+
+# Python 2/3 compatible way to read the README with UTF-8 encoding
+def read_readme():
+    # io.open exists in Python 2.7+ and works exactly like the Python 3 open()
+    with io.open("README.md", "r", encoding="utf-8") as fh:
+        return fh.read()
+
+
+long_description = read_readme()
 
 setup(
     name="statelogic",
-    version="1.2.2",
+    version="1.2.3",
     description="A safe, pure-Python finite state machine with colored terminal logging",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -16,7 +26,6 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(where="src"),
     classifiers=[
-        # Universal support
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
@@ -31,7 +40,6 @@ setup(
         "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: 3.14",
 
-        # General metadata
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",

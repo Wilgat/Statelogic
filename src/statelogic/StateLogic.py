@@ -9,7 +9,7 @@ class StateLogic(AppData, Sh):
     CLASSNAME = "StateLogic"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 2
+    PATCH_VERSION = 3
 
     BOLD='\033[1m'
     DARK_AMBER='\033[33m'
