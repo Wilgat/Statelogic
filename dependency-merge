@@ -347,8 +347,8 @@ class TopologicalMergeOrder:
 import re
 from pathlib import Path
 from collections import OrderedDict
-class DependencyMerge
-    def run():
+class DependencyMerge:
+    def run(self):
         print("=" * 90)
         print("Dependency MERGER")
         print("Topological order + full import deduplication + clean output")

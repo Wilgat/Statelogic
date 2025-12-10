@@ -4,4 +4,4 @@ from .FSM import FSM
 from .StateLogic import StateLogic
 
 __all__ = ['StateLogic', 'Attr', 'FSM']
-__version__ = "1.2.1" 
+__version__ = "1.2.2" 
