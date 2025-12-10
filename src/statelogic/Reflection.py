@@ -1,15 +1,18 @@
 from __future__ import print_function
+# NEW: Added for full 2/3 compatibility (absolute_import and division prevent import/division issues)
+from __future__ import absolute_import, division
 
 class Reflection(object):
 
     CLASSNAME = "Reflection"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 1
+    PATCH_VERSION = 2
 
     @staticmethod
     def class_version():
-        return f"{Reflection.CLASSNAME} v{Reflection.MAJOR_VERSION}.{Reflection.MINOR_VERSION}.{Reflection.PATCH_VERSION}"
+        # NEW: Replaced f-string with .format() for Python 2.7 compatibility
+        return "{0} v{1}.{2}.{3}".format(Reflection.CLASSNAME, Reflection.MAJOR_VERSION, Reflection.MINOR_VERSION, Reflection.PATCH_VERSION)
 
     def hasFunc(self, func):
         if hasattr(self, 'fromClass'):

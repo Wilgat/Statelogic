@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import  # NEW: Enhanced for Py2 compat
 
 import os
 from .Attr import Attr  
@@ -10,11 +10,12 @@ class FSM(Reflection):
     CLASSNAME = "FSM"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 1
+    PATCH_VERSION = 2
 
     @staticmethod
     def class_version():
-        return f"{FSM.CLASSNAME} v{FSM.MAJOR_VERSION}.{FSM.MINOR_VERSION}.{FSM.PATCH_VERSION}"
+        # NEW: Replace f-string with .format() for Py2 compat
+        return "{classname} v{ver.major}.{ver.minor}.{ver.patch}".format(classname=FSM.CLASSNAME, ver=FSM)
 
     def __name_convert__(self, input_string):
         split_parts = input_string.split('_')
@@ -41,7 +42,8 @@ class FSM(Reflection):
                 
         # If not found, maybe warn?
         if hasattr(fromClass, 'infoMsg'):
-            fromClass.infoMsg(f"No transition named '{transition_name}' found from state '{fromClass.state()}'", "FSM")
+            # NEW: Replace f-string with .format() for Py2 compat
+            fromClass.infoMsg("No transition named '{}' found from state '{}'".format(transition_name, fromClass.state()), "FSM")
         return fromClass
 
     def after(self, name, foo):

@@ -1,12 +1,18 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function, absolute_import, division
 import unittest
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch  # Requires 'pip install mock' for Python 2.7
 from os.path import join, realpath
 import sys
 
 # Adjust the path to import StateLogic
 sys.path.insert(0, realpath(join(__file__, "../../src/")))
 from statelogic import StateLogic
-
+patch_target = '__builtin__.print' if sys.version_info[0] < 3 else 'builtins.print'
 
 class TestStateLogic(unittest.TestCase):
     def setUp(self):
@@ -69,7 +75,7 @@ class TestStateLogic(unittest.TestCase):
         s.freeze()
         self.assertEqual(s.state(), "SOLID")
 
-    @patch('builtins.print')
+    @patch(patch_target)
     def test_should_log_messages(self, mock_print):
         self.state_logic.infoMsg("Starting state transition")
         mock_print.assert_called()  # Check if logging occurred
@@ -80,7 +86,8 @@ class TestStateLogic(unittest.TestCase):
                 self.count=0
             self.count = self.count + 1
             return True
-        self.state_logic.__dict__["fired"] = fired.__get__(self)
+        # Remember to attach fired to self.state_logic instead of self
+        self.state_logic.__dict__["fired"] = fired.__get__(self.state_logic)
         # Setup event hooks
         self.state_logic.before('freeze', self.state_logic.fired)
         self.state_logic.on('condense', self.state_logic.fired)

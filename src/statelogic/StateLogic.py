@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import  # NEW: Enhanced for Py2 compat
 
 from .Attr import Attr  
 from .Sh import Sh 
@@ -9,7 +9,7 @@ class StateLogic(AppData, Sh):
     CLASSNAME = "StateLogic"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 1
+    PATCH_VERSION = 2
 
     BOLD='\033[1m'
     DARK_AMBER='\033[33m'
@@ -26,7 +26,8 @@ class StateLogic(AppData, Sh):
 
     @staticmethod
     def class_version():
-        return f"{StateLogic.CLASSNAME} v{StateLogic.MAJOR_VERSION}.{StateLogic.MINOR_VERSION}.{StateLogic.PATCH_VERSION}"
+        # NEW: Replace f-string with .format() for Py2 compat
+        return "{classname} v{ver.major}.{ver.minor}.{ver.patch}".format(classname=StateLogic.CLASSNAME, ver=StateLogic)
 
     def __init__(self, fromClass=None, this=None):
         isSelf = False
@@ -38,6 +39,22 @@ class StateLogic(AppData, Sh):
         except:
             super(StateLogic, self).__init__(fromClass=fromClass,this=this)
         self.__init_signal__()
+        self.__init__msgbase__(fromClass)
+        if not isSelf:
+            fromClass.__dict__['infoMsg'] = self.infoMsg.__get__(fromClass)
+            fromClass.__dict__['criticalMsg'] = self.criticalMsg.__get__(fromClass)
+            fromClass.__dict__['safeMsg'] = self.safeMsg.__get__(fromClass)
+            fromClass.__dict__['__timeMsg__'] = self.__timeMsg__.__get__(fromClass)
+            fromClass.__dict__['__header__'] = self.__header__.__get__(fromClass)
+            fromClass.__dict__['__coloredMsg__'] = self.__coloredMsg__.__get__(fromClass)
+            fromClass.__dict__['__tagMsg__'] = self.__tagMsg__.__get__(fromClass)
+            fromClass.__dict__['__formattedMsg__'] = self.__formattedMsg__.__get__(fromClass)
+            fromClass.__dict__['prn'] = self.prn.__get__(fromClass)
+            fromClass.__dict__['now'] = self.now.__get__(fromClass)
+            fromClass.__dict__['version'] = self.version.__get__(fromClass)
+        self.fromClass=fromClass
+
+    def __init__msgbase__(self, fromClass):
         if not hasattr(fromClass, "__msgbase_inited__"):
             fromClass.__msgbase_inited__ = True
             Attr(fromClass,"__colorMsgColor__", "")
@@ -52,92 +69,87 @@ class StateLogic(AppData, Sh):
             Attr(fromClass,"__timeColor__","")
             Attr(fromClass,"__timeTerm__","")
             Attr(fromClass,"useColor", not self.isGitBash())
-        if not isSelf:
-            fromClass.__dict__['infoMsg'] = self.infoMsg.__get__(fromClass)
-            fromClass.__dict__['criticalMsg'] = self.criticalMsg.__get__(fromClass)
-            fromClass.__dict__['safeMsg'] = self.safeMsg.__get__(fromClass)
-            fromClass.__dict__['__timeMsg__'] = self.__timeMsg__.__get__(fromClass)
-            fromClass.__dict__['__header__'] = self.__header__.__get__(fromClass)
-            fromClass.__dict__['__coloredMsg__'] = self.__coloredMsg__.__get__(fromClass)
-            fromClass.__dict__['__tagMsg__'] = self.__tagMsg__.__get__(fromClass)
-            fromClass.__dict__['__formattedMsg__'] = self.__formattedMsg__.__get__(fromClass)
-            fromClass.__dict__['prn'] = self.prn.__get__(fromClass)
-            fromClass.__dict__['now'] = self.now.__get__(fromClass)
-            fromClass.__dict__['version'] = self.version.__get__(fromClass)
+            fromClass.useColor()
 
     def __coloredMsg__(self,color=None):
+        fromClass = self.fromClass
         if color is None :
-            if self.__message__() == '':
+            if fromClass.__message__() == '':
                 return ''
             else:
-                return "%s%s%s" % (self.__colorMsgColor__(),\
-                    self.__message__(),self.__colorMsgTerm__())
+                return "%s%s%s" % (fromClass.__colorMsgColor__(),\
+                    fromClass.__message__(),fromClass.__colorMsgTerm__())
         else:
-            if color == '' or not self.useColor():
-                self.__colorMsgColor__('')
-                self.__colorMsgTerm__('')
+            if color == '' or not fromClass.useColor():
+                fromClass.__colorMsgColor__('')
+                fromClass.__colorMsgTerm__('')
             else:
-                self.__colorMsgColor__(color)
-                self.__colorMsgTerm__(StateLogic.END)
+                fromClass.__colorMsgColor__(color)
+                fromClass.__colorMsgTerm__(StateLogic.END)
             return self
 
     def __formattedMsg__(self):
-        return "%s %s %s\n  %s" % (self.__timeMsg__(),self.__header__(),\
-            self.__tagMsg__(),self.__coloredMsg__())
+        fromClass = self.fromClass
+        return "%s %s %s\n  %s" % (fromClass.__timeMsg__(),fromClass.__header__(),\
+            fromClass.__tagMsg__(),fromClass.__coloredMsg__())
 
     def __header__(self,color=None):
+        fromClass = self.fromClass
         if color is None:
-            if self.appName() == 'None':
-                return self.__headerTerm__()
+            if fromClass.appName() == 'None':
+                return fromClass.__headerTerm__()
             else:
-                return "%s%s(v%s) %s" % (self.__headerColor__(),\
-                    self.appName(),self.version(),\
-                    self.__headerTerm__())
+                return "%s%s(v%s) %s" % (fromClass.__headerColor__(),\
+                    fromClass.appName(),fromClass.version(),\
+                    fromClass.__headerTerm__())
         else:
-            if color == '' or not self.useColor():
-                self.__headerColor__('')\
+            if color == '' or not fromClass.useColor():
+                fromClass.__headerColor__('')\
                     .__headerTerm__('')
             else:
-                self.__headerColor__(color)\
+                fromClass.__headerColor__(color)\
                     .__headerTerm__(StateLogic.END)
         return self
 
     def __tagMsg__(self,color=None,outterColor=None):
+        fromClass = self.fromClass
         if color is None:
-            if self.__tag__() == '' or not self.useColor():
-                return '[%s]: ' % self.__tag__()
+            if fromClass.__tag__() == '' or not fromClass.useColor():
+                return '[%s]: ' % fromClass.__tag__()
             else:
-                return "%s[%s%s%s%s%s]:%s " % (self.__tagOutterColor__(),\
-                    self.__tagTerm__(),self.__tagColor__(),\
-                    self.__tag__(),self.__tagTerm__(),\
-                    self.__tagOutterColor__(),self.__tagTerm__())
+                return "%s[%s%s%s%s%s]:%s " % (fromClass.__tagOutterColor__(),\
+                    fromClass.__tagTerm__(),fromClass.__tagColor__(),\
+                    fromClass.__tag__(),fromClass.__tagTerm__(),\
+                    fromClass.__tagOutterColor__(),fromClass.__tagTerm__())
         else:
             if color == '':
-                self.__tagColor__('')\
+                fromClass.__tagColor__('')\
                     .__tagOutterColor__('')\
                     .__tagTerm__('')
             else:
-                self.__tagColor__(color)\
+                fromClass.__tagColor__(color)\
                     .__tagOutterColor__(outterColor)\
                     .__tagTerm__(StateLogic.END)
             return self
 
     def __timeMsg__(self, color=None):
+        fromClass = self.fromClass
         if color is None:
-            return "%s%s%s" % (self.__timeColor__(),self.now(),\
-                self.__timeTerm__())
+            return "%s%s%s" % (fromClass.__timeColor__(),fromClass.now(),\
+                fromClass.__timeTerm__())
         else:
-            if color == '' or not self.useColor():
-                self.__timeColor__('')\
+            if color == '' or not fromClass.useColor():
+                fromClass.__timeColor__('')\
                     .__timeTerm__('')
             else:
-                self.__timeColor__(color)\
+                fromClass.__timeColor__(color)\
                     .__timeTerm__(StateLogic.END)
             return self
 
     def criticalMsg(self,msg,tag=''):
-        if self.useColor():
-            self.__tag__(tag).__message__(msg) \
+        fromClass = self.fromClass
+        if fromClass.useColor():
+            fromClass.__tag__(tag).__message__(msg) \
                 .__timeMsg__(StateLogic.BOLD + StateLogic.ITALICS + \
                 StateLogic.DARK_AMBER) \
                 .__header__(StateLogic.BOLD + StateLogic.DARK_AMBER) \
@@ -145,41 +157,43 @@ class StateLogic(AppData, Sh):
                 .__tagMsg__(StateLogic.FLASHING + StateLogic.LIGHT_RED,\
                 StateLogic.LIGHT_AMBER)
         else:
-            self.__tag__(tag).__message__(msg) \
+            fromClass.__tag__(tag).__message__(msg) \
                 .__timeMsg__('') \
                 .__header__(StateLogic.BOLD + StateLogic.DARK_AMBER) \
                 .__coloredMsg__('') \
                 .__tagMsg__('')
-        self.prn("%s" % (self.__formattedMsg__()))
+        fromClass.prn("%s" % (fromClass.__formattedMsg__()))
         return self
 
     def infoMsg(self,msg,tag=''):
-        if self.useColor():
-            self.__tag__(tag).__message__(msg) \
+        fromClass = self.fromClass
+        if fromClass.useColor():
+            fromClass.__tag__(tag).__message__(msg) \
                 .__timeMsg__(StateLogic.BOLD+StateLogic.ITALICS+StateLogic.DARK_BLUE) \
                 .__header__(StateLogic.BOLD+StateLogic.DARK_BLUE) \
                 .__coloredMsg__(StateLogic.ITALICS + StateLogic.LIGHT_BLUE) \
                 .__tagMsg__(StateLogic.LIGHT_AMBER,StateLogic.LIGHT_BLUE)
         else:
-            self.__tag__(tag).__message__(msg) \
+            fromClass.__tag__(tag).__message__(msg) \
                 .__timeMsg__('') \
                 .__header__('') \
                 .__coloredMsg__('') \
                 .__tagMsg__('')
-        self.prn("%s" % (self.__formattedMsg__()))
+        fromClass.prn("%s" % (fromClass.__formattedMsg__()))
         return self
 
     def safeMsg(self,msg,tag=''):
-        if self.useColor():
-            self.__tag__(tag).__message__(msg).__timeMsg__(StateLogic.BOLD + StateLogic.ITALICS + \
+        fromClass = self.fromClass
+        if fromClass.useColor():
+            fromClass.__tag__(tag).__message__(msg).__timeMsg__(StateLogic.BOLD + StateLogic.ITALICS + \
                 StateLogic.DARK_TURQUOISE) \
                 .__header__(StateLogic.BOLD + StateLogic.DARK_TURQUOISE) \
                 .__coloredMsg__(StateLogic.ITALICS + StateLogic.LIGHT_TURQUOISE) \
                 .__tagMsg__(StateLogic.LIGHT_GREEN,StateLogic.LIGHT_TURQUOISE)
         else:
-            self.__tag__(tag).__message__(msg).__timeMsg__('') \
+            fromClass.__tag__(tag).__message__(msg).__timeMsg__('') \
                 .__header__('') \
                 .__coloredMsg__('') \
                 .__tagMsg__('')
-        self.prn("%s" % (self.__formattedMsg__()))
+        fromClass.prn("%s" % (fromClass.__formattedMsg__()))
         return self

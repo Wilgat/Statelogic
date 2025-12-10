@@ -1,11 +1,19 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function, absolute_import, division
 import unittest
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch  # Requires 'pip install mock' for Python 2.7
 from os.path import join, realpath
 import sys
 
 # Adjust the path to import StateLogic
 sys.path.insert(0, realpath(join(__file__, "../../src/")))
 from statelogic import StateLogic
+
+patch_target = '__builtin__.print' if sys.version_info[0] < 3 else 'builtins.print'
 
 class TestStateLogic(unittest.TestCase):
     def test_default_state_should_be_none(self):
@@ -83,7 +91,7 @@ class TestStateLogic(unittest.TestCase):
         state_logic.freeze()
         self.assertEqual(state_logic.state(), "SOLID")
 
-    @patch('builtins.print')
+    @patch(patch_target)
     def test_should_log_messages(self, mock_print):
         state_logic = StateLogic()  # Creating instance directly
         state_logic.infoMsg("Starting state transition")
@@ -91,7 +99,7 @@ class TestStateLogic(unittest.TestCase):
 
     def test_should_call_hook_methods_on_state_transition(self):
         state_logic = StateLogic()  # Creating instance directly
-        state_logic.transition("condense", "GAS", "LIQUID")  # ← ADD THIS LINE
+        state_logic.transition("condense", "GAS", "LIQUID")  # ADD THIS LINE
         def fired(self):
             if not hasattr(self, "count"):
                 self.count = 0

@@ -1,6 +1,7 @@
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import  # NEW: Enhanced for Py2 compat
 
 import signal
+import sys  # NEW: For sys.exit() compat across versions
 from .Attr import Attr 
 from .Reflection import Reflection 
 from .FSM import FSM
@@ -10,11 +11,12 @@ class Signal(Reflection):
     CLASSNAME = "Signal"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 1
+    PATCH_VERSION = 2
 
     @staticmethod
     def class_version():
-        return f"{Signal.CLASSNAME} v{Signal.MAJOR_VERSION}.{Signal.MINOR_VERSION}.{Signal.PATCH_VERSION}"
+        # NEW: Replace f-string with .format() for Py2 compat
+        return "{classname} v{ver.major}.{ver.minor}.{ver.patch}".format(classname=Signal.CLASSNAME, ver=Signal)
 
     def __init__(self):
         self.__init_signal__()
@@ -53,4 +55,5 @@ class Signal(Reflection):
             self.prn('\nYou pressed Ctrl + c!\n')
         if sig == 3:
             self.prn('\nYou pressed Ctrl + Back Slash!')
-        exit()
+        # NEW: Use sys.exit for reliable exit in scripts (avoids REPL dependency in Py2)
+        sys.exit(1)

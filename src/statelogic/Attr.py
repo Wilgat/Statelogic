@@ -1,19 +1,20 @@
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import  # NEW: Enhanced for Py2 compat
 try:
     basestring
 except NameError:
-    basestring=str
+    basestring=str  # Already Py2/3 compat shim
 
 class Attr(object):
 
     CLASSNAME = "Attr"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 1
+    PATCH_VERSION = 2
 
     @staticmethod
     def class_version():
-        return f"{Attr.CLASSNAME} v{Attr.MAJOR_VERSION}.{Attr.MINOR_VERSION}.{Attr.PATCH_VERSION}"
+        # NEW: Replace f-string with .format() for Py2 compat
+        return "{classname} v{ver.major}.{ver.minor}.{ver.patch}".format(classname=Attr.CLASSNAME, ver=Attr)
 
     RESERVED = ['False', 'def', 'if', 'raise', 'None', 'del', 'import', 
         'return', 'True', 'elif', 'in', 'try', 'and', 'else', 'is', 'while', 

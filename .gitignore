@@ -4,3 +4,20 @@ build
 dist
 .pytest_cache
 statelogic.pxd
+
+# Python bytecode and cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+
+# Other common Python ignores (optional but useful)
+*.egg-info/
+dist/
+build/
+*.egg
+*.so
+*.o
+*.a
+*.pyc

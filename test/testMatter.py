@@ -1,5 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import print_function, absolute_import, division
 import unittest
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch  # Requires 'pip install mock' for Python 2.7
 from os.path import join, realpath
 import sys
 
@@ -8,8 +13,11 @@ sys.path.insert(0, realpath(join(__file__, "../../src/")))
 from statelogic import StateLogic
 
 class Matter(StateLogic):
-    def __init__(self, author: str, app_name: str, major_version: str, minor_version: str, patch_version: str):
-        super().__init__(self)
+    def __init__(self, author, app_name, major_version, minor_version, patch_version):
+        try:
+            super().__init__(self)
+        except:
+            super(Matter, self).__init__(self)
         self.author(author).appName(app_name).majorVersion(major_version).minorVersion( minor_version).patchVersion( patch_version)
         self.temperature = 110  # Initialize temperature
 
@@ -54,19 +62,19 @@ class Matter(StateLogic):
         self.info_msg("The substance has condensed from gas to liquid.", "CONDENSED")
 
     def show_condense(self):
-        self.safe_msg(f"Another On {self.transitionName()}: {self.fromState()} -> {self.nextState()}", "CONDENSE")
+        self.safe_msg("Another On {}: {} -> {}".format(self.transitionName(), self.fromState(), self.nextState()), "CONDENSE")
 
     def show_condense2(self):
-        self.safe_msg(f"(2) Another On {self.transitionName()}: {self.fromState()} -> {self.nextState()}", self.transitionName().upper())
+        self.safe_msg("(2) Another On {0}: {1} -> {2}".format(self.transitionName(), self.fromState(), self.nextState()), self.transitionName().upper())
 
-    def check_condense(self) -> bool:
+
+    def check_condense(self):
         if self.temperature < 120:
             self.safe_msg("Condense success", "CONDENSE SUCCESS")
             return True  # Allow the transition
         else:
             self.safe_msg("Condense failed: temperature too high.", "CONDENSE FAILED")
             return False  # Prevent the transition
-
 
 class TestMatter(unittest.TestCase):
     def setUp(self):

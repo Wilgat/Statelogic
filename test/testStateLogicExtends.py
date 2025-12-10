@@ -1,11 +1,18 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function, absolute_import, division
 import unittest
-from unittest.mock import patch
+try:
+    from unittest.mock import patch
+except ImportError:
+    from mock import patch  # Requires 'pip install mock' for Python 2.7
 from os.path import join, realpath
 import sys
 
 # Adjust the path to import StateLogic
 sys.path.insert(0, realpath(join(__file__, "../../src/")))
 from statelogic import StateLogic
+patch_target = '__builtin__.print' if sys.version_info[0] < 3 else 'builtins.print'
 
 class TestStateLogic(unittest.TestCase):
 
@@ -112,7 +119,7 @@ class TestStateLogic(unittest.TestCase):
         self.freeze()
         self.assertEqual(self.state(), "SOLID")
 
-    @patch('builtins.print')
+    @patch(patch_target)
     def test_should_log_messages(self, mock_print):
         # Extend StateLogic to the Unittest Class everytime 
         # to enhance the capability of Unittest to have state functions
@@ -133,7 +140,9 @@ class TestStateLogic(unittest.TestCase):
                 self.count=0
             self.count = self.count + 1
             return True
+        # very important, don't skip
         self.__dict__["fired"] = fired.__get__(self)
+        
         # Setup event hooks
         self.before('freeze', self.fired)
         self.on('condense', self.fired)
@@ -153,17 +162,24 @@ class TestStateLogic(unittest.TestCase):
         # to enhance the capability of Unittest to have state functions
         StateLogic(self)        # don't need to get return object
         self.transition("freeze", "LIQUID", "SOLID")
+        self.assertIn('freeze', self.events())
         self.transition("condense", "GAS", "LIQUID")  # Set up transition
+        self.assertIn('condense', self.events())
         def fired(self):
             if not hasattr(self, "count"):
                 self.count=0
             self.count = self.count + 1
             return False
-        self.before('freeze', fired)
-        self.on('condense', fired)
-        self.after('condense', fired)
-        self.state('GAS')
+        # very important, don't skip
+        self.__dict__["fired"] = fired.__get__(self)
 
+        self.before('freeze', self.fired)
+        self.assertIn('beforeFreeze', self.methods())
+        self.on('condense', self.fired)
+        self.assertIn('onCondense', self.methods())
+        self.after('condense', self.fired)
+        self.assertIn('afterCondense', self.methods())
+        self.state('GAS')
         self.fire("condense")  # Trigger
         self.assertEqual(self.state(), 'LIQUID')
         self.assertEqual(self.count, 2)

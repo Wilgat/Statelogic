@@ -1,8 +1,13 @@
-from __future__ import print_function
+from __future__ import print_function, division, absolute_import  # NEW: Enhanced for Py2 compat
 from datetime import date, datetime
 import os
 import re
 import time
+# NEW: Handle pwd import for Unix username (fallback on Windows/ImportError)
+try:
+    import pwd
+except ImportError:
+    pwd = None  # No pwd on Windows; fallback to os.getlogin()
 from .Signal import Signal
 
 class Sh(Signal):
@@ -10,11 +15,12 @@ class Sh(Signal):
     CLASSNAME = "Sh"
     MAJOR_VERSION = 1
     MINOR_VERSION = 2
-    PATCH_VERSION = 1
+    PATCH_VERSION = 2
 
     @staticmethod
     def class_version():
-        return f"{Sh.CLASSNAME} v{Sh.MAJOR_VERSION}.{Sh.MINOR_VERSION}.{Sh.PATCH_VERSION}"
+        # NEW: Replace f-string with .format() for Py2 compat
+        return "{classname} v{ver.major}.{ver.minor}.{ver.patch}".format(classname=Sh.CLASSNAME, ver=Sh)
 
     def __init__(self):
         try:
@@ -91,6 +97,7 @@ class Sh(Signal):
         return os.getuid()
 
     def username(self):
+        # NEW: Use pwd if available (Unix); fallback for Windows/Py2 compat
         if pwd is None:
             return os.getlogin()
         return pwd.getpwuid(self.userID())[0]
